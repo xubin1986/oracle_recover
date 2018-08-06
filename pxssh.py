@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 #pip install pexect
 
-import commands,time,os,sys,re,datetime
-from pexpect import pxssh
+import commands,time,os,sys,re,datetime,pexpect
 
 def log(content):
     date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -27,11 +26,14 @@ def localcmd(cmd,want=None,hate=None):
         
 class Remote(object):
     def __init__(self,server,username,password):
-        self.con = pxssh.pxssh()
         try:
-            self.con.login(server=host,username=user,password=password)
+            mself.con = pexpect.spawn('ssh %s@%s' % (username,password))
+            self.con.expect('password:')
+            self.con.sendline(password)
+            self.con.expect(r'#|$',timeout=10)
         except Exception as e:
             log(str(e))
+            sys.exit(1)
     def sshend(self):
         self.con.logout()
     def execcmd(self,cmd,want=None,hate=None,timeout=10):
@@ -88,7 +90,7 @@ class Remote(object):
             self.sqlend()
             sys.exit(1) 
     def sqlbegin():
-        self.con.sendline('sqlplus /as sysdba')
+        self.con.sendline('su - oracle;sqlplus /as sysdba')
         try:
             self.con.expect('SQL>',timeout=5)
         except:
